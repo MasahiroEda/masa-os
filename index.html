@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Masa OS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0e0e0f;
+    --surface: #161618;
+    --surface2: #1e1e21;
+    --border: #2a2a2e;
+    --accent: #c8f060;
+    --accent2: #60d0f0;
+    --warn: #f0a060;
+    --muted: #666;
+    --text: #e8e8e8;
+    --text2: #999;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .mode-tab {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .mode-tab.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    padding: 20px;
+    max-width: 540px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* MORNING VIEW */
+  .greeting-area {
+    margin-bottom: 24px;
+  }
+
+  .greeting-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    min-height: 60px;
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .msg-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .msg.user .msg-avatar { background: var(--surface2); color: var(--text2); }
+  .msg.ai .msg-avatar { background: var(--accent); color: #000; font-weight: 700; }
+
+  .msg-bubble {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: calc(100% - 40px);
+    border: 1px solid var(--border);
+  }
+
+  .msg.user .msg-bubble {
+    background: var(--surface2);
+  }
+
+  .msg.ai .msg-bubble {
+    border-color: var(--accent);
+    border-opacity: 0.3;
+  }
+
+  /* TODAY'S 3 TASKS */
+  .today-tasks {
+    margin-top: 4px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .task-item:hover { border-color: var(--accent); }
+  .task-item.done { opacity: 0.4; }
+  .task-item.done .task-name { text-decoration: line-through; }
+
+  .task-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .task-item.done .task-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .task-check-icon { font-size: 10px; color: #000; display: none; }
+  .task-item.done .task-check-icon { display: block; }
+
+  .task-info { flex: 1; }
+  .task-project {
+    font-size: 10px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+  }
+  .task-name { font-size: 13px; color: var(--text); }
+
+  /* DEADLINE STRIP */
+  .deadline-strip {
+    margin-top: 20px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .deadline-strip-label {
+    font-size: 10px;
+    color: var(--warn);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+  }
+
+  .deadline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .deadline-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+  }
+
+  .deadline-date {
+    font-family: 'DM Mono', monospace;
+    color: var(--text2);
+    font-size: 11px;
+  }
+
+  .deadline-days {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .deadline-days.urgent { background: rgba(240,100,100,0.15); color: #f06060; }
+  .deadline-days.soon { background: rgba(240,160,96,0.15); color: var(--warn); }
+  .deadline-days.ok { background: rgba(96,208,240,0.15); color: var(--accent2); }
+
+  /* CHAT INPUT */
+  .input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 20px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.2s;
+  }
+
+  .send-btn:hover { opacity: 0.8; }
+  .send-btn svg { width: 16px; height: 16px; }
+
+  /* WEEKLY VIEW */
+  .weekly-section {
+    margin-bottom: 24px;
+  }
+
+  .weekly-title {
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brain-dump-area {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    outline: none;
+    resize: none;
+    min-height: 100px;
+    transition: border-color 0.2s;
+  }
+
+  .brain-dump-area:focus { border-color: var(--accent); }
+  .brain-dump-area::placeholder { color: var(--muted); }
+
+  .action-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: opacity 0.2s;
+  }
+
+  .action-btn:hover { opacity: 0.85; }
+  .action-btn.secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .project-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .project-card:hover { border-color: var(--accent); }
+  .project-card.selected { border-color: var(--accent); background: rgba(200,240,96,0.05); }
+
+  .project-name {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .project-next {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  /* NEXT ACTION EDITOR */
+  .next-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .next-action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .next-action-project {
+    font-size: 10px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .next-action-input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+  }
+
+  .next-action-input::placeholder { color: var(--muted); }
+
+  /* DEADLINE EDITOR */
+  .deadline-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .deadline-add-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .deadline-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .deadline-input:focus { border-color: var(--accent); }
+
+  .deadline-date-input {
+    width: 110px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    outline: none;
+  }
+
+  .add-small-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* MONTHLY VIEW */
+  .priority-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .priority-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .priority-rank {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .priority-name { font-size: 13px; flex: 1; }
+
+  .priority-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .priority-status.main { background: rgba(200,240,96,0.15); color: var(--accent); }
+  .priority-status.sub { background: rgba(96,208,240,0.15); color: var(--accent2); }
+  .priority-status.hold { background: rgba(102,102,102,0.2); color: var(--muted); }
+
+  .not-doing-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .not-doing-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    padding: 6px 0;
+  }
+
+  .not-doing-item::before {
+    content: '✕';
+    color: var(--muted);
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+  }
+
+  .loading-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.2s infinite;
+  }
+
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
+    30% { opacity: 1; transform: scale(1); }
+  }
+
+  /* SCROLL PADDING */
+  .scroll-pad { height: 80px; }
+
+  /* WEEKLY MAIN INPUT */
+  .weekly-main-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .weekly-main-input:focus { border-color: var(--accent); }
+  .weekly-main-input::placeholder { color: var(--muted); }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .badge.main-badge { background: rgba(200,240,96,0.12); color: var(--accent); border: 1px solid rgba(200,240,96,0.2); }
+  .badge.sub-badge { background: rgba(96,208,240,0.1); color: var(--accent2); border: 1px solid rgba(96,208,240,0.2); }
+
+  /* WEEKLY OUTCOME ITEMS */
+  .outcome-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">MASA OS</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchView('morning')">毎朝</button>
+      <button class="mode-tab" onclick="switchView('weekly')">週次</button>
+      <button class="mode-tab" onclick="switchView('monthly')">月次</button>
+    </div>
+    <button onclick="openInbox()" style="width:36px;height:36px;border-radius:10px;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:300;color:#000;flex-shrink:0" title="インボックスに追加">+</button>
+    <button onclick="openSettings()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="設定">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 20px;width:calc(100% - 40px);max-width:480px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.15em">// SETTINGS</span>
+      <button onclick="closeSettings()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">×</button>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:8px">GEMINI API KEY（無料）</div>
+      <input id="api-key-input" type="password" placeholder="AIza..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">AIブリーフィング・整理機能に必要。Googleアカウントで<a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">無料取得 →</a></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.1em;margin-bottom:8px">NOTION TOKEN</div>
+      <input id="notion-token-input" type="password" placeholder="ntn_..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">インボックス→Notion保存に必要。</div>
+    </div>
+    <button onclick="saveSettings()" style="width:100%;padding:12px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer">保存する</button>
+  </div>
+</div>
+
+<!-- INBOX MODAL -->
+<div id="inbox-modal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:540px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:0.15em">// INBOX</span>
+      <button onclick="closeInbox()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">×</button>
+    </div>
+    <textarea id="inbox-input" placeholder="今気になってること、やること、思いついたこと。整理しなくていい。" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:'Noto Sans JP',sans-serif;font-size:13px;line-height:1.7;outline:none;resize:none;min-height:80px;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button onclick="saveInbox()" style="flex:1;padding:12px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer">保存する</button>
+      <button id="inbox-voice-btn" onclick="toggleInboxVoice()" style="width:48px;height:48px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </button>
+    </div>
+    <div id="inbox-voice-status" style="display:none;margin-top:8px;font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;text-align:center">● 録音中... もう一度押すと停止</div>
+    <!-- インボックス一覧 -->
+    <div id="inbox-list-section" style="margin-top:20px;display:none">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:0.15em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">未処理 <span id="inbox-count" style="color:var(--warn)"></span></div>
+      <div id="inbox-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ===== MORNING VIEW ===== -->
+  <div class="view active" id="view-morning">
+    <div class="greeting-area">
+      <div class="greeting-label">// TODAY</div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="empty-state">「おはよう」と入力してスタート</div>
+      </div>
+    </div>
+
+    <div id="today-task-section" style="display:none">
+      <div class="section-label">// 今日の3つ</div>
+      <div id="today-tasks"></div>
+    </div>
+
+    <div id="deadline-section" style="display:none">
+      <div class="deadline-strip">
+        <div class="deadline-strip-label">⚠ DEADLINES</div>
+        <div class="deadline-list" id="deadline-display"></div>
+      </div>
+    </div>
+
+    <div class="scroll-pad"></div>
+  </div>
+
+  <!-- ===== WEEKLY VIEW ===== -->
+  <div class="view" id="view-weekly">
+
+    <div class="weekly-section">
+      <div class="weekly-title">// BRAIN DUMP</div>
+      <textarea class="brain-dump-area" id="brain-dump" placeholder="今気になってること、やらなきゃなこと、モヤってること、全部ここに出す。整理しなくていい。"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="action-btn" style="flex:1;margin-top:0" onclick="processBrainDump()">AIで整理する</button>
+        <button id="voice-btn" onclick="toggleVoice()" style="width:48px;height:48px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s" title="音声入力">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </button>
+      </div>
+      <div id="voice-status" style="display:none;margin-top:8px;font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;text-align:center">● 録音中... もう一度押すと停止</div>
+    </div>
+
+    <div class="weekly-section" id="weekly-outcome-section" style="display:none">
+      <div class="weekly-title">// 今週のメイン</div>
+      <input class="weekly-main-input" id="weekly-main" placeholder="今週、ここを前進させる（例：IVY料金設計完成）" style="margin-bottom:10px">
+      <div class="weekly-title" style="margin-top:16px">// サブ・維持</div>
+      <div id="weekly-outcomes"></div>
+    </div>
+
+    <div class="weekly-section" id="next-action-section" style="display:none">
+      <div class="weekly-title">// NEXT ACTION（事業別1個ずつ）</div>
+      <div class="next-action-list" id="next-action-list"></div>
+      <button class="action-btn" style="margin-top:12px" onclick="saveWeekly()">保存して反映する</button>
+    </div>
+
+    <div class="weekly-section">
+      <div class="weekly-title">// 締切管理</div>
+      <div class="deadline-editor">
+        <div id="deadline-items"></div>
+        <div class="deadline-add-row">
+          <input class="deadline-input" id="new-deadline-name" placeholder="タスク名">
+          <input class="deadline-date-input" id="new-deadline-date" type="date">
+          <button class="add-small-btn" onclick="addDeadline()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-pad"></div>
+  </div>
+
+  <!-- ===== MONTHLY VIEW ===== -->
+  <div class="view" id="view-monthly">
+
+    <div class="weekly-section">
+      <div class="weekly-title">// 北極星（人生目標）</div>
+      <div id="northstar-list" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input class="deadline-input" id="northstar-input" placeholder="例：40歳でビジネスクラス世界旅行">
+        <button class="add-small-btn" onclick="addNorthstar()">+</button>
+      </div>
+    </div>
+
+    <div class="weekly-section">
+      <div class="weekly-title">// 事業優先度</div>
+      <div class="priority-list" id="priority-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="deadline-input" id="priority-name-input" placeholder="事業名">
+        <select id="priority-status-input" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);font-size:12px;outline:none">
+          <option value="main">メイン</option>
+          <option value="sub">サブ</option>
+          <option value="hold">維持</option>
+        </select>
+        <button class="add-small-btn" onclick="addPriority()">+</button>
+      </div>
+    </div>
+
+    <div class="weekly-section">
+      <div class="weekly-title">// 今やらないことリスト</div>
+      <div class="not-doing-list" id="not-doing-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="deadline-input" id="not-doing-input" placeholder="やらないこと追加">
+        <button class="add-small-btn" onclick="addNotDoing()">+</button>
+      </div>
+    </div>
+
+    <div class="weekly-section">
+      <div style="display:flex;justify-content:flex-end">
+        <button class="action-btn" style="width:auto;padding:10px 20px" onclick="saveMonthly()">月次データを保存</button>
+      </div>
+    </div>
+
+    <div class="scroll-pad"></div>
+  </div>
+
+</div>
+
+<!-- INPUT -->
+<div class="input-area" id="input-area">
+  <div class="input-row">
+    <input class="chat-input" id="chat-input" placeholder="「おはよう」でスタート" onkeydown="if(event.key==='Enter')sendMessage()">
+    <button class="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let state = {
+  weeklyMain: '',
+  nextActions: {},
+  deadlines: [],
+  todayTasks: [],
+  tasksDone: [],
+  notDoing: ['AI外販はまだやらない', '新規事業を増やさない', 'LP営業拡大しない'],
+  priorities: [
+    { name: 'Amway', status: 'main' },
+    { name: 'IVY Fit', status: 'main' },
+    { name: 'SNS（さや・パル）', status: 'sub' },
+    { name: 'Lavi', status: 'sub' },
+    { name: 'LP/広告', status: 'hold' },
+    { name: '楽天', status: 'hold' },
+  ],
+  northstar: ['月200〜300万 × 週20h以内', 'Amway Founder\'s Emerald', '40歳でビジネスクラス世界旅行', 'りさと自由に生きる'],
+  inbox: [],
+  brainDumpResult: null
+};
+
+const PROJECTS = ['Amway', 'IVY Fit', 'Lavi', 'SNS（さや）', 'SNS（パル）', 'LP/広告', '楽天', '健康'];
+
+// ===== API KEY =====
+function getApiKey() {
+  return localStorage.getItem('masa-os-api-key') || '';
+}
+
+function openSettings() {
+  document.getElementById('settings-modal').style.display = 'flex';
+  document.getElementById('api-key-input').value = getApiKey();
+  document.getElementById('notion-token-input').value = localStorage.getItem('masa-os-notion-token') || '';
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none';
+}
+
+function saveSettings() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (key) localStorage.setItem('masa-os-api-key', key);
+  const notionToken = document.getElementById('notion-token-input').value.trim();
+  if (notionToken) localStorage.setItem('masa-os-notion-token', notionToken);
+  closeSettings();
+  alert('設定を保存しました！');
+}
+
+// ===== GEMINI API =====
+async function callAI(prompt) {
+  const key = getApiKey();
+  if (!key) {
+    throw new Error('APIキー未設定');
+  }
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1000 }
+      })
+    }
+  );
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// ===== NOTION CONFIG =====
+const NOTION_TOKEN = localStorage.getItem('masa-os-notion-token') || '';
+const NOTION_VERSION = '2022-06-28';
+const DB_SIGNAL = '706ad3c57c5a4bbd8784af876a6547a1';
+const DB_WEEKLY = '29b75c61b6fa4f7bb3c0e82b17b1b3ee';
+
+async function notionAPI(path, method = 'GET', body = null) {
+  const headers = {
+    'Authorization': `Bearer ${NOTION_TOKEN}`,
+    'Notion-Version': NOTION_VERSION,
+    'Content-Type': 'application/json',
+  };
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const res = await fetch(`https://api.notion.com${path}`, opts);
+    return await res.json();
+  } catch(e) {
+    console.error('Notion API error:', e);
+    return null;
+  }
+}
+
+async function saveSignalToNotion(text, kind = '気づき', importance = '中') {
+  if (!DB_SIGNAL) return;
+  await notionAPI('/v1/pages', 'POST', {
+    parent: { database_id: DB_SIGNAL },
+    properties: {
+      'シグナル': { title: [{ text: { content: text } }] },
+      '日付': { date: { start: new Date().toISOString().split('T')[0] } },
+      '種類': { select: { name: kind } },
+      '重要度': { select: { name: importance } }
+    }
+  });
+}
+
+// ===== STORAGE =====
+async function saveState() {
+  try { localStorage.setItem('masa-os-state', JSON.stringify(state)); } catch(e) {}
+}
+
+async function loadState() {
+  try {
+    const r = localStorage.getItem('masa-os-state');
+    if (r) state = { ...state, ...JSON.parse(r) };
+  } catch(e) {}
+}
+
+// ===== VIEW SWITCHING =====
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.mode-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  event.target.classList.add('active');
+
+  const inputArea = document.getElementById('input-area');
+  inputArea.style.display = v === 'morning' ? 'block' : 'none';
+
+  if (v === 'weekly') renderWeekly();
+  if (v === 'monthly') renderMonthly();
+}
+
+// ===== MORNING CHAT =====
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addMsg('user', text);
+
+  const lowerText = text.toLowerCase();
+  const isGreeting = /おはよ|おはよう|はじめ|スタート|start|hello|hi/.test(lowerText);
+
+  if (isGreeting) {
+    showLoading();
+    await generateMorningBriefing();
+  } else {
+    showLoading();
+    await chatWithAI(text);
+  }
+}
+
+function addMsg(role, content) {
+  const container = document.getElementById('chat-messages');
+  const empty = container.querySelector('.empty-state');
+  if (empty) empty.remove();
+
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'user' ? 'M' : 'AI'}</div>
+    <div class="msg-bubble">${content}</div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showLoading() {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'loading-msg';
+  div.innerHTML = `
+    <div class="msg-avatar">AI</div>
+    <div class="msg-bubble"><div class="loading"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeLoading() {
+  const el = document.getElementById('loading-msg');
+  if (el) el.remove();
+}
+
+async function generateMorningBriefing() {
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+
+  const deadlineInfo = state.deadlines.map(d => {
+    const days = Math.ceil((new Date(d.date) - today) / 86400000);
+    return `${d.name}（あと${days}日）`;
+  }).join('、') || 'なし';
+
+  const nextActionsInfo = Object.entries(state.nextActions)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}: ${v}`)
+    .join('\n') || '未設定';
+
+  const prompt = `あなたはMasaの個人アシスタントAIです。Masaは複数事業を並走させている起業家です。
+
+今日は${dateStr}です。
+
+今週のメイン：${state.weeklyMain || '未設定'}
+各事業のNext Action：
+${nextActionsInfo}
+
+直近の締切：${deadlineInfo}
+
+朝のブリーフィングとして、以下を自然な日本語で提供してください：
+1. 一言の朝の挨拶（短く）
+2. 今日やるべき3つのタスクを、Next Actionから選んで提示（週のメインを優先、締切が近いものも考慮）
+3. 締切があれば一言添える
+
+形式：
+- 挨拶は1文
+- タスクは「① [事業名] [具体的なアクション]」の形式で3つ
+- 全体で100文字以内に収める
+- 余計な説明不要、シンプルに`;
+
+  try {
+    const aiText = await callAI(prompt);
+    removeLoading();
+    addMsg('ai', aiText.replace(/\n/g, '<br>'));
+    generateTodayTasks();
+    showDeadlines();
+  } catch(e) {
+    removeLoading();
+    if (e.message === 'APIキー未設定') {
+      addMsg('ai', 'おはよう！<br>⚙️設定からGemini APIキーを入力すると、AIブリーフィングが使えるよ。<a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">無料で取得 →</a>');
+    } else {
+      addMsg('ai', 'おはよう！今日も前進しよう。<br>週次タブでNext Actionを設定すると、ここに今日の3つが表示されるよ。');
+    }
+    generateTodayTasks();
+    showDeadlines();
+  }
+}
+
+async function chatWithAI(userText) {
+  const prompt = `あなたはMasaの個人タスク管理アシスタントです。
+Masaは複数事業（Amway、IVY Fit、Lavi、SNS運用など）を並走させる起業家です。
+
+ユーザーのメッセージ：${userText}
+
+今週のメイン：${state.weeklyMain || '未設定'}
+
+タスク管理や今日の優先度に関する短い返答をしてください（100文字以内）。`;
+
+  try {
+    const aiText = await callAI(prompt);
+    removeLoading();
+    addMsg('ai', aiText.replace(/\n/g, '<br>'));
+  } catch(e) {
+    removeLoading();
+    addMsg('ai', '了解！');
+  }
+}
+
+function generateTodayTasks() {
+  const actions = Object.entries(state.nextActions).filter(([, v]) => v);
+  if (actions.length === 0) return;
+
+  // 優先度：週次メインに関連するもの優先、締切近いもの
+  let tasks = actions.slice(0, 3).map(([project, action]) => ({
+    project, action, done: false
+  }));
+
+  state.todayTasks = tasks;
+  saveState();
+  renderTodayTasks();
+}
+
+function renderTodayTasks() {
+  const container = document.getElementById('today-tasks');
+  const section = document.getElementById('today-task-section');
+
+  if (state.todayTasks.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  container.innerHTML = state.todayTasks.map((t, i) => `
+    <div class="task-item ${state.tasksDone.includes(i) ? 'done' : ''}" onclick="toggleTask(${i})">
+      <div class="task-check">
+        <span class="task-check-icon">✓</span>
+      </div>
+      <div class="task-info">
+        <div class="task-project">${t.project}</div>
+        <div class="task-name">${t.action}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleTask(i) {
+  const idx = state.tasksDone.indexOf(i);
+  if (idx === -1) state.tasksDone.push(i);
+  else state.tasksDone.splice(idx, 1);
+  saveState();
+  renderTodayTasks();
+}
+
+function showDeadlines() {
+  const section = document.getElementById('deadline-section');
+  const container = document.getElementById('deadline-display');
+  const today = new Date();
+
+  if (state.deadlines.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  container.innerHTML = state.deadlines.map(d => {
+    const days = Math.ceil((new Date(d.date) - today) / 86400000);
+    const cls = days <= 2 ? 'urgent' : days <= 5 ? 'soon' : 'ok';
+    return `
+      <div class="deadline-row">
+        <span>${d.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="deadline-date">${d.date}</span>
+          <span class="deadline-days ${cls}">あと${days}日</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== BRAIN DUMP =====
+async function processBrainDump() {
+  const text = document.getElementById('brain-dump').value.trim();
+  if (!text) { alert('まず気になってること全部書き出してみて'); return; }
+
+  const btn = event.target;
+  btn.textContent = '整理中...';
+  btn.disabled = true;
+
+  const prompt = `以下はMasaのブレインダンプです（Masaは複数事業を持つ起業家：Amway、IVY Fit、Lavi、SNS運用など）。
+
+ブレインダンプ：
+${text}
+
+これを分析して、以下のJSON形式で返してください。JSONのみ返し、マークダウンや説明は不要：
+{
+  "weeklyMain": "今週最も前進させるべき1つのアウトカム（状態で書く）",
+  "subOutcomes": ["サブで前進させること2つまで"],
+  "nextActions": {
+    "Amway": "次の一手（具体的なアクション、なければnull）",
+    "IVY Fit": "次の一手（具体的なアクション、なければnull）",
+    "Lavi": "次の一手（具体的なアクション、なければnull）",
+    "SNS（さや）": "次の一手（具体的なアクション、なければnull）",
+    "SNS（パル）": "次の一手（具体的なアクション、なければnull）",
+    "LP/広告": "次の一手（具体的なアクション、なければnull）",
+    "楽天": "次の一手（具体的なアクション、なければnull）",
+    "健康": "次の一手（具体的なアクション、なければnull）"
+  }
+}`;
+
+  try {
+    let aiText = await callAI(prompt);
+    aiText = aiText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(aiText);
+
+    // 反映
+    if (parsed.weeklyMain) document.getElementById('weekly-main').value = parsed.weeklyMain;
+    if (parsed.nextActions) {
+      Object.entries(parsed.nextActions).forEach(([k, v]) => {
+        if (v) state.nextActions[k] = v;
+      });
+    }
+
+    state.brainDumpResult = parsed;
+    document.getElementById('weekly-outcome-section').style.display = 'block';
+    document.getElementById('next-action-section').style.display = 'block';
+    renderNextActions();
+    renderWeeklyOutcomes(parsed.subOutcomes || []);
+
+  } catch(e) {
+    alert('AIの整理に失敗しました。もう一度試してみて。');
+  }
+
+  btn.textContent = 'AIで整理する';
+  btn.disabled = false;
+}
+
+function renderWeeklyOutcomes(subs) {
+  const container = document.getElementById('weekly-outcomes');
+  container.innerHTML = subs.map(s => `
+    <div class="outcome-item">
+      <span class="badge sub-badge">サブ</span>
+      <span style="font-size:13px">${s}</span>
+    </div>
+  `).join('');
+}
+
+function renderNextActions() {
+  const container = document.getElementById('next-action-list');
+  container.innerHTML = PROJECTS.map(p => `
+    <div class="next-action-row">
+      <div class="next-action-project">${p}</div>
+      <input class="next-action-input" 
+             placeholder="次の一手を書く" 
+             value="${state.nextActions[p] || ''}"
+             onchange="state.nextActions['${p}'] = this.value">
+    </div>
+  `).join('');
+}
+
+function saveWeekly() {
+  state.weeklyMain = document.getElementById('weekly-main').value;
+  PROJECTS.forEach(p => {
+    const input = document.querySelector(`input[onchange*="${p}"]`);
+    if (input) state.nextActions[p] = input.value;
+  });
+  state.tasksDone = [];
+  saveState();
+  alert('保存しました！毎朝タブで「おはよう」と入力してみて。');
+}
+
+// ===== DEADLINES =====
+function renderDeadlineItems() {
+  const container = document.getElementById('deadline-items');
+  const today = new Date();
+  container.innerHTML = state.deadlines.map((d, i) => {
+    const days = Math.ceil((new Date(d.date) - today) / 86400000);
+    const cls = days <= 2 ? 'urgent' : days <= 5 ? 'soon' : 'ok';
+    return `
+      <div class="deadline-row" style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:12px">${d.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="deadline-days ${cls}">あと${days}日</span>
+          <span onclick="removeDeadline(${i})" style="cursor:pointer;color:var(--muted);font-size:12px">×</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addDeadline() {
+  const name = document.getElementById('new-deadline-name').value.trim();
+  const date = document.getElementById('new-deadline-date').value;
+  if (!name || !date) return;
+  state.deadlines.push({ name, date });
+  document.getElementById('new-deadline-name').value = '';
+  document.getElementById('new-deadline-date').value = '';
+  saveState();
+  renderDeadlineItems();
+}
+
+function removeDeadline(i) {
+  state.deadlines.splice(i, 1);
+  saveState();
+  renderDeadlineItems();
+}
+
+// ===== MONTHLY =====
+function addNorthstar() {
+  const input = document.getElementById('northstar-input');
+  const text = input.value.trim();
+  if (!text) return;
+  state.northstar.push(text);
+  input.value = '';
+  renderMonthly();
+}
+
+function removeNorthstar(i) {
+  state.northstar.splice(i, 1);
+  renderMonthly();
+}
+
+function addPriority() {
+  const name = document.getElementById('priority-name-input').value.trim();
+  const status = document.getElementById('priority-status-input').value;
+  if (!name) return;
+  state.priorities.push({ name, status });
+  document.getElementById('priority-name-input').value = '';
+  renderMonthly();
+}
+
+function removePriority(i) {
+  state.priorities.splice(i, 1);
+  renderMonthly();
+}
+
+function changePriorityStatus(i, status) {
+  state.priorities[i].status = status;
+  renderMonthly();
+}
+
+function addNotDoing() {
+  const input = document.getElementById('not-doing-input');
+  const text = input.value.trim();
+  if (!text) return;
+  state.notDoing.push(text);
+  input.value = '';
+  renderMonthly();
+}
+
+function removeNotDoing(i) {
+  state.notDoing.splice(i, 1);
+  renderMonthly();
+}
+
+function saveMonthly() {
+  saveState();
+  const btn = event.target;
+  btn.textContent = '保存済み ✓';
+  setTimeout(() => btn.textContent = '月次データを保存', 1500);
+}
+
+function renderMonthly() {
+  // 北極星
+  const nsContainer = document.getElementById('northstar-list');
+  if (nsContainer) {
+    nsContainer.innerHTML = state.northstar.map((t, i) => `
+      <div class="priority-item" style="margin-bottom:6px">
+        <span style="font-size:13px;flex:1">${t}</span>
+        <span onclick="removeNorthstar(${i})" style="cursor:pointer;color:var(--muted);font-size:12px;padding:4px 8px">×</span>
+      </div>
+    `).join('');
+  }
+
+  // 事業優先度
+  const prContainer = document.getElementById('priority-list');
+  if (prContainer) {
+    const statusLabel = { main: 'メイン', sub: 'サブ', hold: '維持' };
+    const statusCls = { main: 'main', sub: 'sub', hold: 'hold' };
+    prContainer.innerHTML = state.priorities.map((p, i) => `
+      <div class="priority-item" style="margin-bottom:6px">
+        <span class="priority-rank">${String(i+1).padStart(2,'0')}</span>
+        <span class="priority-name">${p.name}</span>
+        <select onchange="changePriorityStatus(${i}, this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 6px;color:var(--text);font-size:11px;outline:none;cursor:pointer">
+          <option value="main" ${p.status==='main'?'selected':''}>メイン</option>
+          <option value="sub" ${p.status==='sub'?'selected':''}>サブ</option>
+          <option value="hold" ${p.status==='hold'?'selected':''}>維持</option>
+        </select>
+        <span onclick="removePriority(${i})" style="cursor:pointer;color:var(--muted);font-size:12px;padding:4px 8px">×</span>
+      </div>
+    `).join('');
+  }
+
+  // やらないことリスト
+  const ndContainer = document.getElementById('not-doing-list');
+  if (ndContainer) {
+    ndContainer.innerHTML = state.notDoing.map((t, i) => `
+      <div class="not-doing-item" style="justify-content:space-between">
+        <span>${t}</span>
+        <span onclick="removeNotDoing(${i})" style="cursor:pointer;color:var(--muted);font-size:12px;margin-left:8px">×</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ===== INBOX =====
+let inboxVoiceRecognition = null;
+let isInboxRecording = false;
+
+function openInbox() {
+  const modal = document.getElementById('inbox-modal');
+  modal.style.display = 'flex';
+  document.getElementById('inbox-input').value = '';
+  renderInboxList();
+  setTimeout(() => document.getElementById('inbox-input').focus(), 100);
+}
+
+function closeInbox() {
+  document.getElementById('inbox-modal').style.display = 'none';
+  if (isInboxRecording && inboxVoiceRecognition) {
+    inboxVoiceRecognition.stop();
+  }
+}
+
+function saveInbox() {
+  const text = document.getElementById('inbox-input').value.trim();
+  if (!text) return;
+  state.inbox.push({
+    text,
+    createdAt: new Date().toISOString(),
+    done: false
+  });
+  saveState();
+  // Notionの日次シグナルDBにも保存
+  saveSignalToNotion(text, '気づき', '中').catch(()=>{});
+  document.getElementById('inbox-input').value = '';
+  renderInboxList();
+
+  // 保存フィードバック
+  const btn = document.querySelector('#inbox-modal button[onclick="saveInbox()"]');
+  btn.textContent = '保存した ✓';
+  btn.style.opacity = '0.7';
+  setTimeout(() => {
+    btn.textContent = '保存する';
+    btn.style.opacity = '1';
+  }, 1000);
+}
+
+function renderInboxList() {
+  const items = state.inbox.filter(i => !i.done);
+  const section = document.getElementById('inbox-list-section');
+  const list = document.getElementById('inbox-list');
+  const count = document.getElementById('inbox-count');
+
+  if (items.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  count.textContent = `（${items.length}件）`;
+  list.innerHTML = items.map((item, i) => {
+    const realIdx = state.inbox.indexOf(item);
+    const date = new Date(item.createdAt);
+    const dateStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+    return `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:13px;line-height:1.5">${item.text}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace">${dateStr}</div>
+        </div>
+        <button onclick="doneInbox(${realIdx})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--muted);font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0">処理済み</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function doneInbox(i) {
+  state.inbox[i].done = true;
+  saveState();
+  renderInboxList();
+}
+
+function toggleInboxVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('このブラウザは音声入力に対応していません。Chromeをお試しください。');
+    return;
+  }
+
+  if (isInboxRecording) {
+    inboxVoiceRecognition.stop();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  inboxVoiceRecognition = new SpeechRecognition();
+  inboxVoiceRecognition.lang = 'ja-JP';
+  inboxVoiceRecognition.continuous = true;
+  inboxVoiceRecognition.interimResults = true;
+
+  const btn = document.getElementById('inbox-voice-btn');
+  const status = document.getElementById('inbox-voice-status');
+  const textarea = document.getElementById('inbox-input');
+  let finalTranscript = textarea.value;
+
+  inboxVoiceRecognition.onstart = () => {
+    isInboxRecording = true;
+    btn.style.background = 'rgba(200,240,96,0.2)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.querySelector('svg').setAttribute('stroke', 'var(--accent)');
+    status.style.display = 'block';
+  };
+
+  inboxVoiceRecognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    textarea.value = finalTranscript + interim;
+  };
+
+  inboxVoiceRecognition.onend = () => {
+    isInboxRecording = false;
+    textarea.value = finalTranscript;
+    btn.style.background = 'var(--surface2)';
+    btn.style.borderColor = 'var(--border)';
+    btn.querySelector('svg').setAttribute('stroke', 'var(--text2)');
+    status.style.display = 'none';
+  };
+
+  inboxVoiceRecognition.onerror = () => {
+    isInboxRecording = false;
+    status.style.display = 'none';
+  };
+
+  inboxVoiceRecognition.start();
+}
+
+// モーダル外クリックで閉じる
+document.getElementById('inbox-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeInbox();
+});
+let recognition = null;
+let isRecording = false;
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('このブラウザは音声入力に対応していません。Chromeをお試しください。');
+    return;
+  }
+
+  if (isRecording) {
+    recognition.stop();
+    return;
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'ja-JP';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  const btn = document.getElementById('voice-btn');
+  const status = document.getElementById('voice-status');
+  const textarea = document.getElementById('brain-dump');
+  let finalTranscript = textarea.value;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    btn.style.background = 'rgba(200,240,96,0.2)';
+    btn.style.borderColor = 'var(--accent)';
+    btn.querySelector('svg').setAttribute('stroke', 'var(--accent)');
+    status.style.display = 'block';
+  };
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        finalTranscript += e.results[i][0].transcript;
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    textarea.value = finalTranscript + interim;
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    textarea.value = finalTranscript;
+    btn.style.background = 'var(--surface2)';
+    btn.style.borderColor = 'var(--border)';
+    btn.querySelector('svg').setAttribute('stroke', 'var(--text2)');
+    status.style.display = 'none';
+  };
+
+  recognition.onerror = (e) => {
+    isRecording = false;
+    status.style.display = 'none';
+    btn.style.background = 'var(--surface2)';
+    btn.style.borderColor = 'var(--border)';
+  };
+
+  recognition.start();
+}
+
+// ===== WEEKLY RENDER =====
+function renderWeekly() {
+  renderNextActions();
+  renderDeadlineItems();
+  if (state.weeklyMain) {
+    document.getElementById('weekly-main').value = state.weeklyMain;
+    document.getElementById('weekly-outcome-section').style.display = 'block';
+    document.getElementById('next-action-section').style.display = 'block';
+  }
+}
+
+// ===== INIT =====
+async function init() {
+  await loadState();
+  renderTodayTasks();
+  if (state.todayTasks.length > 0) showDeadlines();
+  renderMonthly();
+}
+
+init();
+</script>
+</body>
+</html>
