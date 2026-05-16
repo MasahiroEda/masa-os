@@ -870,7 +870,7 @@ async function callAI(prompt) {
     throw new Error('APIキー未設定');
   }
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1179,7 +1179,10 @@ ${text}
   try {
     let aiText = await callAI(prompt);
     aiText = aiText.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(aiText);
+    // JSON部分だけを抽出
+    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('AIのレスポンスが不正です: ' + aiText.substring(0, 100));
+    const parsed = JSON.parse(jsonMatch[0]);
 
     // 反映
     if (parsed.weeklyMain) document.getElementById('weekly-main').value = parsed.weeklyMain;
@@ -1196,7 +1199,8 @@ ${text}
     renderWeeklyOutcomes(parsed.subOutcomes || []);
 
   } catch(e) {
-    alert('AIの整理に失敗しました。もう一度試してみて。');
+    console.error('AI整理エラー:', e);
+    alert('AIの整理に失敗しました。\nエラー: ' + e.message);
   }
 
   btn.textContent = 'AIで整理する';
